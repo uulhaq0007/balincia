@@ -1,0 +1,247 @@
+// Balincia data model.
+// SQLite for zero-config local development. To use Postgres, change the
+// provider + DATABASE_URL; string "enum" fields keep the schema portable.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  passwordHash  String
+  role          String    @default("CUSTOMER") // CUSTOMER | ADMIN
+  loyaltyPoints Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        Order[]
+  reviews       Review[]
+  addresses     Address[]
+}
+
+model Address {
+  id         String  @id @default(cuid())
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName   String
+  phone      String
+  line1      String
+  line2      String?
+  city       String
+  province   String
+  postalCode String?
+  isDefault  Boolean @default(false)
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String    @default("")
+  palette     String    @default("#1c1917,#a8a29e")
+  sortOrder   Int       @default(0)
+  showInNav   Boolean   @default(true)
+  products    Product[]
+}
+
+model Product {
+  id             String      @id @default(cuid())
+  name           String
+  slug           String      @unique
+  tagline        String      @default("")
+  description    String      @default("")
+  categoryId     String
+  category       Category    @relation(fields: [categoryId], references: [id])
+  gender         String      @default("UNISEX") // MEN | WOMEN | UNISEX
+  concentration  String      @default("EDP") // EDP | EDT | PARFUM | EXTRAIT | ATTAR | MIST | HOME | SET
+  genre          String      @default("WESTERN") // ARABIC | FRENCH | WESTERN | EASTERN
+  topNotes       String      @default("") // comma separated
+  heartNotes     String      @default("")
+  baseNotes      String      @default("")
+  families       String      @default("") // comma separated: woody,floral,fresh,oriental,citrus,gourmand,oud,aquatic,spicy
+  seasons        String      @default("") // comma separated: spring,summer,autumn,winter
+  occasions      String      @default("") // comma separated: day,night,office,evening,signature
+  longevity      Int         @default(3) // 1-5
+  sillage        Int         @default(3) // 1-5
+  images         String      @default("[]") // JSON array of URLs
+  palette        String      @default("#2b2118,#c9a27a") // two colours for generative bottle art
+  bottleShape    String      @default("classic") // classic | round | tall | attar | box | diffuser | candle | mist
+  price          Int         @default(0) // denormalised: lowest variant price (PKR)
+  compareAtPrice Int? // denormalised: compare-at of the cheapest variant
+  isFeatured     Boolean     @default(false)
+  isBestseller   Boolean     @default(false)
+  isNew          Boolean     @default(false)
+  isActive       Boolean     @default(true)
+  ratingAvg      Float       @default(0)
+  ratingCount    Int         @default(0)
+  soldCount      Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  variants       Variant[]
+  reviews        Review[]
+  orderItems     OrderItem[]
+
+  @@index([categoryId])
+  @@index([isActive, price])
+}
+
+model Variant {
+  id             String      @id @default(cuid())
+  productId      String
+  product        Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label          String // e.g. "50ml"
+  sku            String      @unique
+  price          Int
+  compareAtPrice Int?
+  stock          Int         @default(0)
+  sortOrder      Int         @default(0)
+  orderItems     OrderItem[]
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name       String
+  rating     Int
+  title      String   @default("")
+  body       String
+  isApproved Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+
+model Order {
+  id             String       @id @default(cuid())
+  number         String       @unique
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email          String
+  phone          String
+  fullName       String
+  line1          String
+  line2          String?
+  city           String
+  province       String
+  postalCode     String?
+  notes          String?
+  isGift         Boolean      @default(false)
+  giftMessage    String?
+  subtotal       Int
+  discount       Int          @default(0)
+  pointsRedeemed Int          @default(0)
+  shippingFee    Int          @default(0)
+  total          Int
+  couponCode     String?
+  shippingMethod String       @default("STANDARD") // STANDARD | EXPRESS
+  paymentMethod  String       @default("COD") // COD | BANK | WALLET
+  paymentStatus  String       @default("PENDING") // PENDING | PAID | REFUNDED
+  status         String       @default("PENDING") // PENDING | CONFIRMED | PROCESSING | SHIPPED | DELIVERED | CANCELLED
+  courier        String?
+  trackingNumber String?
+  pointsAwarded  Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  items          OrderItem[]
+  events         OrderEvent[]
+
+  @@index([status])
+  @@index([email])
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId    String?
+  variant      Variant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  name         String
+  variantLabel String
+  slug         String
+  palette      String
+  bottleShape  String
+  image        String?
+  price        Int
+  quantity     Int
+}
+
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    String
+  note      String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model Coupon {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  description String    @default("")
+  type        String    @default("PERCENT") // PERCENT | FIXED | FREESHIP
+  value       Int       @default(0)
+  minSubtotal Int       @default(0)
+  maxUses     Int?
+  usedCount   Int       @default(0)
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  type      String   @default("CONTACT") // CONTACT | CORPORATE | REQUEST
+  name      String
+  email     String
+  phone     String?
+  subject   String   @default("")
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ReturnRequest {
+  id          String   @id @default(cuid())
+  orderNumber String
+  email       String
+  phone       String?
+  reason      String
+  details     String   @default("")
+  resolution  String   @default("EXCHANGE") // EXCHANGE | REFUND | STORE_CREDIT
+  status      String   @default("OPEN") // OPEN | APPROVED | REJECTED | COMPLETED
+  createdAt   DateTime @default(now())
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  excerpt   String   @default("")
+  content   String
+  palette   String   @default("#2b2118,#c9a27a")
+  author    String   @default("Balincia Editorial")
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Setting {
+  key   String @id
+  value String
+}
