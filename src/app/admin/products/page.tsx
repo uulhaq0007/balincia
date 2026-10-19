@@ -35,7 +35,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   const and: Prisma.ProductWhereInput[] = [];
   if (q)
     and.push({
-      OR: [{ name: { contains: q } }, { slug: { contains: q.toLowerCase() } }, { variants: { some: { sku: { contains: q.toUpperCase() } } } }],
+      OR: [{ name: { contains: q, mode: "insensitive" } }, { slug: { contains: q, mode: "insensitive" } }, { variants: { some: { sku: { contains: q, mode: "insensitive" } } } }],
     });
   if (category) and.push({ categoryId: category });
   if (status === "active") and.push({ isActive: true });

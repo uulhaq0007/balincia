@@ -23,7 +23,7 @@ export default async function CustomersPage({ searchParams }: Props) {
   const page = readPage(sp);
 
   const search: Prisma.UserWhereInput = q
-    ? { OR: [{ name: { contains: q } }, { email: { contains: q.toLowerCase() } }, { phone: { contains: q } }] }
+    ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q, mode: "insensitive" } }, { phone: { contains: q } }] }
     : {};
   const where: Prisma.UserWhereInput = role ? { AND: [search, { role }] } : search;
 

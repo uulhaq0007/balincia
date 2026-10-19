@@ -6,7 +6,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { syncProductPrice } from "@/lib/catalog";
 import { BOTTLE_SHAPES, CONCENTRATIONS, FAMILIES, GENDERS, GENRES, OCCASIONS, SEASONS } from "@/lib/constants";
-import { db } from "@/lib/db";
+import { db, TX_OPTIONS } from "@/lib/db";
 import { AdminError, hexColor, isImageUrl, isUniqueViolation, optionalInt, requiredInt, type ActionState } from "@/lib/admin";
 import { slugify, splitList } from "@/lib/utils";
 import { firstError } from "@/lib/validators";
@@ -149,7 +149,7 @@ export async function saveProduct(productId: string | null, _prev: ActionState, 
 
       await syncProductPrice(product.id, tx);
       return { id: product.id, variantIds };
-    });
+    }, TX_OPTIONS);
   } catch (error) {
     if (error instanceof AdminError) return { error: error.message };
     if (isUniqueViolation(error)) return { error: "That slug or SKU is already in use — please choose another." };

@@ -1,6 +1,6 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
-import { db } from "./db";
+import { db, TX_OPTIONS } from "./db";
 import { getSettings } from "./settings";
 import { computeTotals, maxRedeemablePoints, pointsEarned } from "./pricing";
 import type { CheckoutInput } from "./validators";
@@ -156,7 +156,7 @@ export async function placeOrder(input: CheckoutInput, userId: string | null) {
     }
 
     return order;
-  });
+  }, TX_OPTIONS);
 }
 
 export async function updateOrderStatus(
@@ -219,5 +219,5 @@ export async function updateOrderStatus(
     }
 
     return tx.order.update({ where: { id: orderId }, data });
-  });
+  }, TX_OPTIONS);
 }

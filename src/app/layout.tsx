@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import { SITE } from "@/lib/constants";
+import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -18,7 +19,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(siteUrl()),
   title: {
     default: `${SITE.name} — ${SITE.tagline} | Luxury Perfumes in Pakistan`,
     template: `%s | ${SITE.name}`,

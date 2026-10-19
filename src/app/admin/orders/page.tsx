@@ -29,9 +29,9 @@ export default async function OrdersPage({ searchParams }: Props) {
   const search: Prisma.OrderWhereInput = q
     ? {
         OR: [
-          { number: { contains: q.toUpperCase() } },
-          { email: { contains: q.toLowerCase() } },
-          { fullName: { contains: q } },
+          { number: { contains: q, mode: "insensitive" } },
+          { email: { contains: q, mode: "insensitive" } },
+          { fullName: { contains: q, mode: "insensitive" } },
           { phone: { contains: q } },
         ],
       }

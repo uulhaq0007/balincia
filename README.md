@@ -1,14 +1,20 @@
 # Balincia — Maison de Parfum
 
-A full-stack perfume e-commerce store built with **Next.js 15 (App Router)**, **React 19**, **TypeScript**, **Tailwind CSS 4** and **Prisma** (SQLite by default). It's inspired by the feature set of a typical Pakistani fragrance retailer: collections, gift boxes, discovery sets, attars, home fragrance, a scent quiz, loyalty points, order tracking and returns. The design and brand are original.
+A full-stack perfume e-commerce store built with **Next.js 15 (App Router)**, **React 19**, **TypeScript**, **Tailwind CSS 4** and **Prisma** with **PostgreSQL** (Neon), deployed on **Vercel**. It's inspired by the feature set of a typical Pakistani fragrance retailer: collections, gift boxes, discovery sets, attars, home fragrance, a scent quiz, loyalty points, order tracking and returns. The design and brand are original.
 
 ## Quick start
 
+Local development uses the separate **balincia-dev** Neon database (never the live one).
+
 ```bash
 npm install          # installs deps and generates the Prisma client
-npm run setup        # creates prisma/dev.db and seeds demo data
+npx vercel env pull  # first time / new machine: writes the dev database URLs to .env.local
 npm run dev          # http://localhost:3000
 ```
+
+Prisma's CLI reads `.env`, so `DATABASE_URL` and `DATABASE_URL_UNPOOLED` for the dev database are also kept there (see `.env.example`). To start a fresh database from scratch instead, run `npm run setup` (creates the tables and seeds demo data).
+
+Demo logins below work on the **dev** database. The **live** site's admin has its own strong password, and the demo customer can't sign in there.
 
 | Demo account | Email | Password |
 |---|---|---|
@@ -17,7 +23,7 @@ npm run dev          # http://localhost:3000
 
 Demo discount codes: `WELCOME10` (10% off over Rs. 2,000), `FLAT500` (Rs. 500 off over Rs. 5,000), `FREESHIP`, and `EID25` (expired, to show the error state).
 
-`npm run db:reset` wipes the database and re-seeds it.
+`npm run db:reset` wipes the database in `.env` and re-seeds it — only ever point it at the dev database.
 
 ## Features
 
@@ -59,12 +65,21 @@ src/
 - **Pricing**: `src/lib/pricing.ts` is shared by the checkout UI (estimates) and the order API (authoritative totals).
 - **Cart and wishlist** persist in `localStorage`; the server re-validates every line at checkout.
 
-## Going to production
+## Deployment (Vercel)
 
-1. **Database**: switch `provider` in `prisma/schema.prisma` to `postgresql` and set `DATABASE_URL` (Neon, Supabase, RDS…). The schema stores enum-like fields as strings, so no other changes are needed. Then run `npx prisma db push` and optionally `npm run db:seed`.
-2. **Secrets**: set a long random `AUTH_SECRET` and your public `NEXT_PUBLIC_SITE_URL`.
-3. **Image uploads** are saved to `storage/uploads` and served by `/media/[file]`, which works with `next start` on a VPS or Docker (persist that folder as a volume). On serverless hosts (e.g. Vercel) the filesystem is ephemeral, so point `src/app/api/admin/upload/route.ts` at S3, Cloudinary or Vercel Blob instead, or paste image URLs in the product editor.
-4. **Integrations not included** (they need merchant accounts or API keys): online card payments (e.g. PayFast, Safepay, Stripe), transactional email/SMS/WhatsApp notifications, and courier booking APIs. Clear extension points exist: payment methods in `src/lib/constants.ts`, order creation in `src/lib/orders.ts` and status changes in `updateOrderStatus`.
+The project is linked to the Vercel project **balincia** and the GitHub repo **uulhaq0007/balincia**. Every push to `main` deploys to production; other branches get preview URLs.
+
+| Piece | Where it lives |
+|---|---|
+| Live database | Neon `balincia-db` (Singapore), connected to Production + Preview — Vercel sets `DATABASE_URL` / `DATABASE_URL_UNPOOLED` |
+| Dev database | Neon `balincia-dev` (Singapore), connected to Development |
+| Product photo uploads | Vercel Blob store `balincia-images` (`BLOB_READ_WRITE_TOKEN`); without it, uploads go to `storage/uploads` and are served by `/media/[file]` |
+| Session signing | `AUTH_SECRET` (separate random value per environment) |
+| Region | Functions run in `sin1` (Singapore, see `vercel.json`) next to the database |
+
+**Changing the database schema:** edit `prisma/schema.prisma`, run `npx prisma db push` (dev), then push the same schema to the live database (`npx vercel env pull .env.production.local --environment production`, run `prisma db push` with those URLs, then delete that file) before deploying code that depends on it.
+
+**Integrations not included** (they need merchant accounts or API keys): online card payments (e.g. PayFast, Safepay, Stripe), transactional email/SMS/WhatsApp notifications, and courier booking APIs. Clear extension points exist: payment methods in `src/lib/constants.ts`, order creation in `src/lib/orders.ts` and status changes in `updateOrderStatus`.
 
 ## Scripts
 
@@ -73,5 +88,5 @@ src/
 | `npm run dev` | Start the dev server |
 | `npm run build` / `npm start` | Production build and serve |
 | `npm run typecheck` | TypeScript check |
-| `npm run setup` | Create the DB schema and seed |
+| `npm run setup` | Create the DB schema and seed (dev database) |
 | `npm run db:reset` | Drop, recreate and seed the DB |

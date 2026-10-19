@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
+import { siteUrl } from "@/lib/site-url";
 import { db } from "@/lib/db";
 import { VIRTUAL_COLLECTIONS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const base = siteUrl();
   const [products, categories, posts] = await Promise.all([
     db.product.findMany({ where: { isActive: true }, select: { slug: true, updatedAt: true } }),
     db.category.findMany({ select: { slug: true } }),

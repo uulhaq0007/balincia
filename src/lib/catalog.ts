@@ -82,13 +82,13 @@ export function filtersToWhere(f: CatalogFilters): Prisma.ProductWhereInput {
   if (f.q) {
     and.push({
       OR: [
-        { name: { contains: f.q } },
-        { tagline: { contains: f.q } },
-        { topNotes: { contains: f.q } },
-        { heartNotes: { contains: f.q } },
-        { baseNotes: { contains: f.q } },
+        { name: { contains: f.q, mode: "insensitive" } },
+        { tagline: { contains: f.q, mode: "insensitive" } },
+        { topNotes: { contains: f.q, mode: "insensitive" } },
+        { heartNotes: { contains: f.q, mode: "insensitive" } },
+        { baseNotes: { contains: f.q, mode: "insensitive" } },
         { families: { contains: f.q.toLowerCase() } },
-        { category: { name: { contains: f.q } } },
+        { category: { name: { contains: f.q, mode: "insensitive" } } },
       ],
     });
   }
@@ -151,7 +151,7 @@ export async function resolveCollection(slug: string) {
       "best-sellers": { isBestseller: true },
       "new-arrivals": { isNew: true },
       "under-2000": { price: { lte: 2000 } },
-      oud: { OR: [{ families: { contains: "oud" } }, { name: { contains: "Oud" } }] },
+      oud: { OR: [{ families: { contains: "oud" } }, { name: { contains: "oud", mode: "insensitive" } }] },
       sale: { compareAtPrice: { not: null } },
       men: { gender: { in: ["MEN", "UNISEX"] }, concentration: { notIn: ["HOME", "SET"] } },
       women: { gender: { in: ["WOMEN", "UNISEX"] }, concentration: { notIn: ["HOME", "SET"] } },

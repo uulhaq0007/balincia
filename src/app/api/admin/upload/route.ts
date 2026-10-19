@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
+import { put } from "@vercel/blob";
 import { getSession } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
 import { MEDIA_PREFIX, UPLOAD_DIR } from "@/lib/uploads";
@@ -30,8 +31,14 @@ export async function POST(request: Request) {
 
   const base = slugify(file.name.replace(/\.[^.]+$/, "")).slice(0, 60) || "image";
   const filename = `${Date.now()}-${base}.${ext}`;
+
+  // On Vercel the filesystem is ephemeral, so uploads go to Vercel Blob when it's connected.
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const blob = await put(`products/${filename}`, file, { access: "public", contentType: file.type });
+    return NextResponse.json({ url: blob.url }, { status: 201 });
+  }
+
   await mkdir(UPLOAD_DIR, { recursive: true });
   await writeFile(path.join(UPLOAD_DIR, filename), Buffer.from(await file.arrayBuffer()));
-
   return NextResponse.json({ url: `${MEDIA_PREFIX}${filename}` }, { status: 201 });
 }

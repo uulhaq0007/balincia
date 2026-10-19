@@ -1,14 +1,16 @@
-// Balincia data model.
-// SQLite for zero-config local development. To use Postgres, change the
-// provider + DATABASE_URL; string "enum" fields keep the schema portable.
+// Balincia data model (PostgreSQL — e.g. Neon via Vercel).
+// DATABASE_URL is the pooled connection used by the app; DATABASE_URL_UNPOOLED is the
+// direct connection Prisma CLI uses for `db push` / migrations. Vercel's Neon
+// integration sets both automatically.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model User {
